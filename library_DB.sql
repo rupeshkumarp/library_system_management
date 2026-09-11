@@ -73,3 +73,71 @@ add constraint fk_issued_status
 foreign key(issued_id)
 references issue_status(issued_id);
 
+
+-- Q1  Create a New Book Record -- "978-1-60129-456-2', 'To Kill a Mockingbird', 'Classic', 6.00, 'yes', 'Harper Lee', 'J.B. Lippincott & Co.')"
+
+insert into books (isbn,book_title,category,rental_price,status,author,publisher)
+values ('978-1-60129-456-2', 'To Kill a Mockingbird', 'Classic', 6.00, 'yes', 'Harper Lee', 'J.B. Lippincott & Co.');
+select*from books where isbn='978-1-60129-456-2';
+
+-- Q2  Update an Existing Member's Address
+update members
+set member_address='Kaveri nagar 4th cross'
+where member_id='C101';
+
+
+-- Q3: Delete a Record from the Issued Status Table -- Objective: Delete the record with issued_id = 'IS121' from the issued_status table.
+delete from issued_status
+where issued_id='IS121';
+
+-- Q4: Retrieve All Books Issued by a Specific Employee -- Objective: Select all books issued by the employee with emp_id = 'E101'.
+select*from employees where emp_id='E101';
+
+-- Q5: List Members Who Have Issued More Than One Book -- Objective: Use GROUP BY to find members who have issued more than one book.
+select issued_emp_id,count(*) from issued_status group by 1 having count(*)>1;
+
+-- Q6: Create Summary Tables: Used CTAS to generate new tables based on query results - each book and total book_issued_cnt**
+-- (CTAS) create table as task
+create table book_counts as(
+select
+	b.isbn,
+    b.book_title,
+    count(i.issued_id) as no_issued
+from books b
+join issued_status i
+on b.isbn=i.issued_book_isbn
+group by 1,2);
+
+-- Q7. Retrieve All Books in a Specific Category
+select*
+from books
+where category='classic';
+
+-- Q 8: Find Total Rental Income by Category
+select 
+	b.isbn,
+    sum(b.rental_price),
+    count(*)
+from books b
+join issued_status i
+on b.isbn=i.issued_book_isbn
+group by 1;
+
+
+-- Q9 List Members Who Registered in the Last 180 Days
+select*from members
+where reg_date>=curdate()-interval 180 day;
+
+-- Q10 List Employees with Their Branch Manager's Name and their branch details
+select
+	e.branch_id,
+    e.emp_id,
+    e.position,
+    e.salary,
+    b.*,
+    e1.emp_id as manager
+from employees e
+join branch b
+using(branch_id) 
+join employees e1
+on e1.emp_id = b.manager_id
