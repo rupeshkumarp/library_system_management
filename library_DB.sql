@@ -140,4 +140,20 @@ from employees e
 join branch b
 using(branch_id) 
 join employees e1
-on e1.emp_id = b.manager_id
+on e1.emp_id = b.manager_id;
+
+-- Q11. Create a Table of Books with Rental Price Above a Certain Threshold
+create table expensive_book as 
+select*from books
+where rental_price>=7.0;
+
+select*from expensive_book;
+
+-- Q12: Retrieve the List of Books Not Yet Returned
+select
+	i.issued_book_name,
+    i.issued_book_isbn
+from issued_status i
+left join return_status r
+using(issued_id)
+where r.return_id is null;
