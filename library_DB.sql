@@ -250,3 +250,41 @@ select*from branch_perf;
 Q16: CTAS: Create a Table of Active Members
 Use the CREATE TABLE AS (CTAS) statement to create a new table active_members 
 containing members who have issued at least one book in the last 2 months */
+select * from members
+where member_id in(
+select distinct issued_member_id
+from issued_status
+where issued_date>=curdate()-interval 2 month);
+
+/*Q17: Find Employees with the Most Book Issues Processed
+Write a query to find the top 3 employees who have processed the most book issues. 
+Display the employee name, number of books processed, and their branch*/
+select
+	e.emp_name,
+    e.branch_id,
+    count(i.issued_id) as no_of_books_issued
+from employees e
+join issued_status i
+on e.emp_id=i.issued_emp_id
+join branch b
+using(branch_id)
+group by 1,2;
+
+
+/*Q 18: Identify Members Issuing High-Risk Books
+Write a query to identify members who have issued books more than twice with the status "damaged" in the books table. 
+Display the member name, book title, and the number of times they've issued damaged books.*/
+select
+	m.member_name,
+	m.member_id,
+    b.book_title,
+    count(*) as no_of_times_book_issued
+from members m
+join issued_status i
+on m.member_id=i.issued_member_id
+join return_status rs
+using(issued_id)
+join books b
+on b.isbn=i.issued_book_isbn
+where rs.book_quality='Damage'
+group by 2,3;
