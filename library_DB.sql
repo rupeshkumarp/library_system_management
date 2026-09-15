@@ -157,3 +157,96 @@ from issued_status i
 left join return_status r
 using(issued_id)
 where r.return_id is null;
+
+/*  Q13: Identify Members with Overdue Books
+Write a query to identify members who have overdue books (assume a 30-day return period).
+Display the member's_id, member's name, book title, issue date, and days overdue.*/
+with cte as(
+select
+	m.member_id,
+    m.member_name, 
+    b.book_title,
+    i.issued_date,
+    rs.return_date,
+	datediff(
+		coalesce(rs.return_date, curdate()),
+		date_add(i.issued_date, interval 30 day)
+		) as days_overdue
+from issued_status i
+join members m
+on i.issued_member_id=m.member_id
+join books b
+on i.issued_book_isbn=b.isbn
+join return_status  rs
+ON rs.issued_id = i.issued_id)
+select*from cte 
+where return_date is null
+and days_overdue> 30;
+
+
+/* Q 14: Update Book Status on Return
+Write a query to update the status of books in the books table to "Yes" when they are returned
+(based on entries in the return_status table).*/
+USE `library_p`;
+DROP procedure IF EXISTS `add_return_records`;
+USE `library_p`;
+DROP procedure IF EXISTS `library_p`.`add_return_records`;
+;
+DELIMITER $$
+USE `library_p`$$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `add_return_records`(
+	in p_return_id varchar(10),
+    in p_issued_id varchar(10),
+    in p_book_quality varchar(10)
+)
+BEGIN
+	declare v_isbn VARCHAR(50);
+    declare v_book_name VARCHAR(80);
+    
+	INSERT INTO return_status(return_id, issued_id, return_date, book_quality)
+    VALUES
+    (p_return_id, p_issued_id, CURRENT_DATE, p_book_quality);
+
+    SELECT 
+        v_isbn,
+        v_book_name
+    FROM issued_status
+    WHERE issued_id = p_issued_id;
+
+    UPDATE books
+    SET status = 'yes'
+    WHERE isbn = v_isbn;
+END$$
+
+DELIMITER ;
+;
+
+
+/*Q15: Branch Performance Report
+Create a query that generates a performance report for each branch, showing the number of books issued, 
+the number of books returned,and the total revenue generated from book rentals.*/
+create table branch_perf (
+select
+	b.branch_id,
+    b.manager_id,
+    count(bk.isbn) as book_count,
+    count(rs.return_id) as no_of_returned,
+    sum(bk.rental_price) as sum_price
+from issued_status i
+join employees e
+on i.issued_emp_id=e.emp_id
+join branch b
+on e.branch_id=b.branch_id
+left join return_status rs
+on rs.issued_id=i.issued_id
+join books bk
+on i.issued_book_isbn=bk.isbn
+group by 1,2
+);
+select*from branch_perf;
+
+
+/*
+Q16: CTAS: Create a Table of Active Members
+Use the CREATE TABLE AS (CTAS) statement to create a new table active_members 
+containing members who have issued at least one book in the last 2 months */
